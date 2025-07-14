@@ -110,7 +110,7 @@ bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
 st.success("✅ Recap generated")
 
 # Strealit code to display on the webpage
-st.title("📈 Daily U.S. Market Recap")
+st.title("📈 U.S. Market Recap")
 
 # 🎙️ Audio player
 st.subheader("🎧 Download the audio file")
