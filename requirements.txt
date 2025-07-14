@@ -4,5 +4,3 @@ newsapi-python
 yfinance
 python-dotenv
 gTTS
-feedparser
-io
