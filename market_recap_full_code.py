@@ -104,7 +104,6 @@ try:
         voice="alloy",
         input=script
     )
-    st.success("TTS API call succeeded.")
 except Exception as e:
     st.error(f"TTS API call failed: {e}")
     st.stop()
@@ -112,16 +111,16 @@ except Exception as e:
 bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
 
 # Strealit code to display on the webpage
-st.title("📈 Daily U.S. Market Recap - Proof of Concept v3")
+st.title("📈 Daily U.S. Market Recap - Proof of Concept")
 
 # 🎙️ Audio player
-st.subheader("🎧 Download and listen to the Recap")
+st.subheader("🎧 Download the Recap Audio")
 audio_bytes = response_audio.read()
 # st.write(f"✅ audio_bytes length: {len(audio_bytes)}")
 # st.write(f"✅ First 10 bytes: {audio_bytes[:10]}")
 
 st.download_button(
-    "Download Recap Audio",
+    "Download",
     data=audio_bytes,
     file_name="recap.mp3",
     mime="audio/mpeg"
