@@ -28,82 +28,88 @@ NEWS_API_KEY = st.secrets["NEWS_API_KEY"]
 client = OpenAI(api_key=OPENAI_API_KEY)
 newsapi = NewsApiClient(api_key = NEWS_API_KEY)
 
-response = newsapi.get_everything(q='stocks OR earnings OR options OR inflation OR Fed OR S&P OR Nasdaq OR NOT crypto NOT bitcoin',
+with st.status("Preparing market recap...") as status:
+    status.update(label="Fetching headlines...")
+    response = newsapi.get_everything(q='stocks OR earnings OR options OR inflation OR Fed OR S&P OR Nasdaq OR NOT crypto NOT bitcoin',
                                   language = 'en',
                                   sort_by='relevancy',
                                   page_size = 15,
                                   domains='wsj.com, bloomberg.com, finance.yahoo.com, marketwatch.com, reuters.com, ft.com, cnbc.com',)
 
-# headlines = [article['title'] for article in response['articles']]
-headlines = []
+    # headlines = [article['title'] for article in response['articles']]
+    headlines = []
+    
+    for article in response['articles']:
+      author = article.get('author')
+      if author and 'Quentin Fottrell' in author:
+        continue
+      headlines.append({'title':article['title'], 'content': article.get('content',''), 'url': article.get('url','')})
+    
+    # print('Top Market Headlines')
+    # for h in headlines:
+    #   print('-', h['title'])
+    #   print('--', h['content'])
+    #   print('---', h['url'])
 
-for article in response['articles']:
-  author = article.get('author')
-  if author and 'Quentin Fottrell' in author:
-    continue
-  headlines.append({'title':article['title'], 'content': article.get('content',''), 'url': article.get('url','')})
+    status.update(label="Gathering market data...")
+    tickers = {'^GSPC': 'S&P500',
+               '^NDX': 'Nasdaq',
+               '^DJI': 'Dow Jones',
+               '^VIX': 'VIX'}
+    
+    def get_market_snapshot(ticker_map):
+        snapshot = {}
+        for symbol, name in ticker_map.items():
+            data = yf.Ticker(symbol).history(period="2d")
+            if len(data) < 2:
+                continue
+            prev_close = data['Close'].iloc[-2]
+            last_close = data['Close'].iloc[-1]
+            pct_change = ((last_close - prev_close) / prev_close) * 100
+            snapshot[name] = {'last_close': last_close, 'pct_change': pct_change}
+        return snapshot
+    
+    snapshot = get_market_snapshot(tickers)
 
-# print('Top Market Headlines')
-# for h in headlines:
-#   print('-', h['title'])
-#   print('--', h['content'])
-#   print('---', h['url'])
+    status.update(label="Generating script...")
+    instructions = ("You are a professional market analyst. Create a clear, weekly recap script (3-4 min) for U.S. equity markets based on the news articles we give. IT should read like a person writing a cohesive, combined summary of these articles:"
+    "Note any macro trends, earnings, or market implications. Don't include insert date comment, and don't refer it to traders. Also make the number in numeric so that TTS can read it. Further check any spelling mistakes in the script")
+    
+    input = (f"S&P 500 closed at {snapshot['S&P500']['last_close']} with a {snapshot['S&P500']['pct_change']:.2f}% change, Nasdaq closed at {snapshot['Nasdaq']['last_close']} with a {snapshot['Nasdaq']['pct_change']:.2f}% change, VIX was at {snapshot['VIX']['last_close']} with a {snapshot['VIX']['pct_change']:.2f}% change."
+    f"Top stories with content: {headlines[:10]}")
+    
+    
+    response_script = client.responses.create(
+        model="gpt-4o-mini",
+        instructions=instructions,
+        input=input,
+    )
+    script = response_script.output_text
+    
+    # response_script = client.chat.completions.create(
+    #     model="gpt-4o-mini",
+    #     messages=[
+    #         {"role": "system", "content": instructions},
+    #         {"role": "user", "content": input}
+    #     ]
+    # )
+    # script = response_script.choices[0].message.content
+    # print(script)
 
-tickers = {'^GSPC': 'S&P500',
-           '^NDX': 'Nasdaq',
-           '^DJI': 'Dow Jones',
-           '^VIX': 'VIX'}
-
-def get_market_snapshot(ticker_map):
-    snapshot = {}
-    for symbol, name in ticker_map.items():
-        data = yf.Ticker(symbol).history(period="2d")
-        if len(data) < 2:
-            continue
-        prev_close = data['Close'].iloc[-2]
-        last_close = data['Close'].iloc[-1]
-        pct_change = ((last_close - prev_close) / prev_close) * 100
-        snapshot[name] = {'last_close': last_close, 'pct_change': pct_change}
-    return snapshot
-
-snapshot = get_market_snapshot(tickers)
-
-instructions = ("You are a professional market analyst. Create a clear, weekly recap script (3-4 min) for U.S. equity markets based on the news articles we give. IT should read like a person writing a cohesive, combined summary of these articles:"
-"Note any macro trends, earnings, or market implications. Don't include insert date comment, and don't refer it to traders. Also make the number in numeric so that TTS can read it. Further check any spelling mistakes in the script")
-
-input = (f"S&P 500 closed at {snapshot['S&P500']['last_close']} with a {snapshot['S&P500']['pct_change']:.2f}% change, Nasdaq closed at {snapshot['Nasdaq']['last_close']} with a {snapshot['Nasdaq']['pct_change']:.2f}% change, VIX was at {snapshot['VIX']['last_close']} with a {snapshot['VIX']['pct_change']:.2f}% change."
-f"Top stories with content: {headlines[:10]}")
-
-# response_script = client.responses.create(
-#     model="gpt-4o-mini",
-#     instructions=instructions,
-#     input=input,
-# )
-
-response_script = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "system", "content": instructions},
-        {"role": "user", "content": input}
-    ]
-)
-script = response_script.choices[0].message.content
-
-# script = response_script.output_text
-# print(script)
-
-response_audio = client.audio.speech.create(
-    model="tts-1",
-    voice="alloy",
-    input=script
-)
-
-# Save to file
-response_audio.stream_to_file("output.mp3")
-
-bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
-# print(bullet_points)
-
+    status.update(label="Creating audio file...")
+    response_audio = client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input=script
+    )
+    
+    # Save to file
+    response_audio.stream_to_file("output.mp3")
+    
+    bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
+    # print(bullet_points)
+    
+    status.update(label="Done", status="complete")
 
 # Strealit code to display on the webpage
 st.title("📈 Daily U.S. Market Recap - Proof of Concept")
@@ -114,7 +120,7 @@ audio_file = open("output.mp3", "rb")
 st.audio(audio_file.read(), format="audio/mp3")
 
 # 📝 Recap script
-st.subheader("📝 Market Recap Script")
+st.subheader("📝 Market Recap")
 st.write(script)
 
 # 📊 Market snapshot
