@@ -11,6 +11,7 @@ Original file is located at
 
 from newsapi import NewsApiClient
 import os
+import io
 from openai import OpenAI
 import yfinance as yf
 import feedparser
@@ -109,8 +110,9 @@ with st.status("Preparing market recap...") as status:
         input=script
     )
     
-    # Save to file
-    response_audio.stream_to_file("output.mp3")
+    audio_buffer = io.BytesIO()
+    audio_buffer.write(response_audio.read())
+    audio_buffer.seek(0)
     
     bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
     status.update(label="Done", state="complete")
@@ -120,8 +122,7 @@ st.title("📈 Daily U.S. Market Recap - Proof of Concept")
 
 # 🎙️ Audio player
 st.subheader("🎧 Listen to the Recap")
-audio_file = open("output.mp3", "rb")
-st.audio(audio_file.read(), format="audio/mp3")
+st.audio(audio_buffer.read(), format="audio/mp3")
 
 # 📝 Recap script
 st.subheader("📝 Market Recap")
