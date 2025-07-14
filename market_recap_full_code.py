@@ -13,15 +13,14 @@ from newsapi import NewsApiClient
 import os
 from openai import OpenAI
 import yfinance as yf
-from gtts import gTTS
-from moviepy.editor import *
 import feedparser
 import streamlit as st
-
-NEWS_API_KEY = '238228470c9b4c3f9d592231a774dfa0'
-OPENAI_API_KEY = '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'
+from dotenv import load_dotenv
+# NEWS_API_KEY = '238228470c9b4c3f9d592231a774dfa0'
+# OPENAI_API_KEY = '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'
 
 # This automatically loads the keys from your environment
+load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 
