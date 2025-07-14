@@ -93,7 +93,7 @@ with st.status("Preparing market recap") as status:
     bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
 
 # Strealit code to display on the webpage
-st.title("📈 Daily U.S. Market Recap - Proof of Concept")
+st.title("📈 Daily U.S. Market Recap")
 
 # 🎙️ Audio player
 st.subheader("🎧 Download the audio file")
