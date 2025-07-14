@@ -14,12 +14,9 @@ import os
 import io
 from openai import OpenAI
 import yfinance as yf
-import feedparser
 import streamlit as st
-from dotenv import load_dotenv
 
 # This automatically loads the keys from your environment
-# load_dotenv()
 # OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 # NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 
@@ -29,112 +26,110 @@ NEWS_API_KEY = st.secrets["NEWS_API_KEY"]
 client = OpenAI(api_key=OPENAI_API_KEY)
 newsapi = NewsApiClient(api_key = NEWS_API_KEY)
 
-with st.status("Preparing market recap...") as status:
-    status.update(label="Fetching headlines...")
-    response = newsapi.get_everything(q='stocks OR earnings OR options OR inflation OR Fed OR S&P OR Nasdaq OR NOT crypto NOT bitcoin',
-                                  language = 'en',
-                                  sort_by='relevancy',
-                                  page_size = 15,
-                                  domains='wsj.com, bloomberg.com, finance.yahoo.com, marketwatch.com, reuters.com, ft.com, cnbc.com',)
 
-    # headlines = [article['title'] for article in response['articles']]
-    headlines = []
-    
-    for article in response['articles']:
-      author = article.get('author')
-      if author and 'Quentin Fottrell' in author:
-        continue
-      headlines.append({'title':article['title'], 'content': article.get('content',''), 'url': article.get('url','')})
-    
-    # print('Top Market Headlines')
-    # for h in headlines:
-    #   print('-', h['title'])
-    #   print('--', h['content'])
-    #   print('---', h['url'])
+response = newsapi.get_everything(q='stocks OR earnings OR options OR inflation OR Fed OR S&P OR Nasdaq OR NOT crypto NOT bitcoin',
+                              language = 'en',
+                              sort_by='relevancy',
+                              page_size = 15,
+                              domains='wsj.com, bloomberg.com, finance.yahoo.com, marketwatch.com, reuters.com, ft.com, cnbc.com',)
 
-    status.update(label="Gathering market data...")
-    tickers = {'^GSPC': 'S&P500',
-               '^NDX': 'Nasdaq',
-               '^DJI': 'Dow Jones',
-               '^VIX': 'VIX'}
-    
-    def get_market_snapshot(ticker_map):
-        snapshot = {}
-        for symbol, name in ticker_map.items():
-            data = yf.Ticker(symbol).history(period="2d")
-            if len(data) < 2:
-                continue
-            prev_close = data['Close'].iloc[-2]
-            last_close = data['Close'].iloc[-1]
-            pct_change = ((last_close - prev_close) / prev_close) * 100
-            snapshot[name] = {'last_close': last_close, 'pct_change': pct_change}
-        return snapshot
-    
-    snapshot = get_market_snapshot(tickers)
+# headlines = [article['title'] for article in response['articles']]
+headlines = []
 
-    sp500 = snapshot.get('S&P500', {'last_close': 'N/A', 'pct_change': 0})
-    nasdaq = snapshot.get('Nasdaq', {'last_close': 'N/A', 'pct_change': 0})
-    vix = snapshot.get('VIX', {'last_close': 'N/A', 'pct_change': 0})
-    
-    status.update(label="Generating script...")
-    instructions = ("You are a professional market analyst. Create a clear, weekly recap script (3-4 min) for U.S. equity markets based on the news articles we give. IT should read like a person writing a cohesive, combined summary of these articles:"
-    "Note any macro trends, earnings, or market implications. Don't include insert date comment, and don't refer it to traders. Also make the number in numeric so that TTS can read it. Further check any spelling mistakes in the script")
-    
-    input = (
-        f"S&P 500 closed at {sp500['last_close']} with a {sp500['pct_change']:.2f}% change, "
-        f"Nasdaq closed at {nasdaq['last_close']} with a {nasdaq['pct_change']:.2f}% change, "
-        f"VIX was at {vix['last_close']} with a {vix['pct_change']:.2f}% change. "
-        f"Top stories with content: {headlines[:10]}"
+for article in response['articles']:
+  author = article.get('author')
+  if author and 'Quentin Fottrell' in author:
+    continue
+  headlines.append({'title':article['title'], 'content': article.get('content',''), 'url': article.get('url','')})
+
+# print('Top Market Headlines')
+# for h in headlines:
+#   print('-', h['title'])
+#   print('--', h['content'])
+#   print('---', h['url'])
+
+tickers = {'^GSPC': 'S&P500',
+           '^NDX': 'Nasdaq',
+           '^DJI': 'Dow Jones',
+           '^VIX': 'VIX'}
+
+def get_market_snapshot(ticker_map):
+    snapshot = {}
+    for symbol, name in ticker_map.items():
+        data = yf.Ticker(symbol).history(period="2d")
+        if len(data) < 2:
+            continue
+        prev_close = data['Close'].iloc[-2]
+        last_close = data['Close'].iloc[-1]
+        pct_change = ((last_close - prev_close) / prev_close) * 100
+        snapshot[name] = {'last_close': last_close, 'pct_change': pct_change}
+    return snapshot
+
+snapshot = get_market_snapshot(tickers)
+
+sp500 = snapshot.get('S&P500', {'last_close': 'N/A', 'pct_change': 0})
+nasdaq = snapshot.get('Nasdaq', {'last_close': 'N/A', 'pct_change': 0})
+vix = snapshot.get('VIX', {'last_close': 'N/A', 'pct_change': 0})
+
+
+instructions = ("You are a professional market analyst. Create a clear, weekly recap script (3-4 min) for U.S. equity markets based on the news articles we give. IT should read like a person writing a cohesive, combined summary of these articles:"
+"Note any macro trends, earnings, or market implications. Don't include insert date comment, and don't refer it to traders. Also make the number in numeric so that TTS can read it. Further check any spelling mistakes in the script")
+
+input = (
+    f"S&P 500 closed at {sp500['last_close']} with a {sp500['pct_change']:.2f}% change, "
+    f"Nasdaq closed at {nasdaq['last_close']} with a {nasdaq['pct_change']:.2f}% change, "
+    f"VIX was at {vix['last_close']} with a {vix['pct_change']:.2f}% change. "
+    f"Top stories with content: {headlines[:10]}"
+)
+
+# response_script = client.responses.create(
+#     model="gpt-4o-mini",
+#     instructions=instructions,
+#     input=input,
+# )
+# script = response_script.output_text
+
+response_script = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": instructions},
+        {"role": "user", "content": input}
+    ]
+)
+script = response_script.choices[0].message.content
+
+try:
+    response_audio = client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input=script
     )
-    
-    # response_script = client.responses.create(
-    #     model="gpt-4o-mini",
-    #     instructions=instructions,
-    #     input=input,
-    # )
-    # script = response_script.output_text
-    
-    response_script = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": instructions},
-            {"role": "user", "content": input}
-        ]
-    )
-    script = response_script.choices[0].message.content
-    
-    try:
-        response_audio = client.audio.speech.create(
-            model="tts-1",
-            voice="alloy",
-            input=script
-        )
-        st.success("TTS API call succeeded.")
-    except Exception as e:
-        st.error(f"TTS API call failed: {e}")
-        st.stop()
+    st.success("TTS API call succeeded.")
+except Exception as e:
+    st.error(f"TTS API call failed: {e}")
+    st.stop()
 
-    status.update(label="Creating audio file...")
-    audio_bytes = response_audio.read()
-    audio_buffer.write(audio_bytes)
-    audio_buffer.seek(0)
 
-    st.write("✅ Audio buffer size:", len(audio_bytes))
-    st.write("✅ First few bytes:", audio_bytes[:10])
+audio_bytes = response_audio.read()
+audio_buffer.write(audio_bytes)
+audio_buffer.seek(0)
 
-    if audio_buffer.getbuffer().nbytes == 0:
-        st.error("❌ Audio buffer is empty!")
-        st.stop()
+st.write("✅ Audio buffer size:", len(audio_bytes))
+st.write("✅ First few bytes:", audio_bytes[:10])
 
-    st.download_button(
-    label="Download MP3 debug",
-    data=audio_bytes,
-    file_name="debug_output.mp3",
-    mime="audio/mpeg"
-    )
-    
-    bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
-    status.update(label="Done", state="complete")
+if audio_buffer.getbuffer().nbytes == 0:
+    st.error("❌ Audio buffer is empty!")
+    st.stop()
+
+st.download_button(
+label="Download MP3 debug",
+data=audio_bytes,
+file_name="debug_output.mp3",
+mime="audio/mpeg"
+)
+
+bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
+status.update(label="Done", state="complete")
 
 # Strealit code to display on the webpage
 st.title("📈 Daily U.S. Market Recap - Proof of Concept v2")
