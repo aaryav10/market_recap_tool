@@ -71,30 +71,36 @@ with st.status("Preparing market recap...") as status:
     
     snapshot = get_market_snapshot(tickers)
 
+    sp500 = snapshot.get('S&P500', {'last_close': 'N/A', 'pct_change': 0})
+    nasdaq = snapshot.get('Nasdaq', {'last_close': 'N/A', 'pct_change': 0})
+    vix = snapshot.get('VIX', {'last_close': 'N/A', 'pct_change': 0})
+    
     status.update(label="Generating script...")
     instructions = ("You are a professional market analyst. Create a clear, weekly recap script (3-4 min) for U.S. equity markets based on the news articles we give. IT should read like a person writing a cohesive, combined summary of these articles:"
     "Note any macro trends, earnings, or market implications. Don't include insert date comment, and don't refer it to traders. Also make the number in numeric so that TTS can read it. Further check any spelling mistakes in the script")
     
-    input = (f"S&P 500 closed at {snapshot['S&P500']['last_close']} with a {snapshot['S&P500']['pct_change']:.2f}% change, Nasdaq closed at {snapshot['Nasdaq']['last_close']} with a {snapshot['Nasdaq']['pct_change']:.2f}% change, VIX was at {snapshot['VIX']['last_close']} with a {snapshot['VIX']['pct_change']:.2f}% change."
-    f"Top stories with content: {headlines[:10]}")
-    
-    
-    response_script = client.responses.create(
-        model="gpt-4o-mini",
-        instructions=instructions,
-        input=input,
+    input = (
+        f"S&P 500 closed at {sp500['last_close']} with a {sp500['pct_change']:.2f}% change, "
+        f"Nasdaq closed at {nasdaq['last_close']} with a {nasdaq['pct_change']:.2f}% change, "
+        f"VIX was at {vix['last_close']} with a {vix['pct_change']:.2f}% change. "
+        f"Top stories with content: {headlines[:10]}"
     )
-    script = response_script.output_text
     
-    # response_script = client.chat.completions.create(
+    # response_script = client.responses.create(
     #     model="gpt-4o-mini",
-    #     messages=[
-    #         {"role": "system", "content": instructions},
-    #         {"role": "user", "content": input}
-    #     ]
+    #     instructions=instructions,
+    #     input=input,
     # )
-    # script = response_script.choices[0].message.content
-    # print(script)
+    # script = response_script.output_text
+    
+    response_script = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": input}
+        ]
+    )
+    script = response_script.choices[0].message.content
 
     status.update(label="Creating audio file...")
     response_audio = client.audio.speech.create(
@@ -107,8 +113,6 @@ with st.status("Preparing market recap...") as status:
     response_audio.stream_to_file("output.mp3")
     
     bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
-    # print(bullet_points)
-    
     status.update(label="Done", status="complete")
 
 # Strealit code to display on the webpage
