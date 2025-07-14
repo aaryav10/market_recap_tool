@@ -105,21 +105,20 @@ try:
         input=script
     )
     st.success("TTS API call succeeded.")
+    st.write(type(response_audio))
 except Exception as e:
     st.error(f"TTS API call failed: {e}")
     st.stop()
 
 
 audio_bytes = response_audio.read()
-audio_buffer.write(audio_bytes)
-audio_buffer.seek(0)
 
-st.write("✅ Audio buffer size:", len(audio_bytes))
-st.write("✅ First few bytes:", audio_bytes[:10])
+# st.write("✅ Audio buffer size:", len(audio_bytes))
+# st.write("✅ First few bytes:", audio_bytes[:10])
 
-if audio_buffer.getbuffer().nbytes == 0:
-    st.error("❌ Audio buffer is empty!")
-    st.stop()
+# if audio_buffer.getbuffer().nbytes == 0:
+#     st.error("❌ Audio buffer is empty!")
+#     st.stop()
 
 st.download_button(
 label="Download MP3 debug",
