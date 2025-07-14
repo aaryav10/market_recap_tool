@@ -115,7 +115,6 @@ with st.status("Preparing market recap...") as status:
         st.stop()
 
     status.update(label="Creating audio file...")
-    audio_buffer = io.BytesIO()
     audio_bytes = response_audio.read()
     audio_buffer.write(audio_bytes)
     audio_buffer.seek(0)
@@ -133,7 +132,6 @@ with st.status("Preparing market recap...") as status:
     file_name="debug_output.mp3",
     mime="audio/mpeg"
     )
-
     
     bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
     status.update(label="Done", state="complete")
@@ -143,8 +141,7 @@ st.title("📈 Daily U.S. Market Recap - Proof of Concept")
 
 # 🎙️ Audio player
 st.subheader("🎧 Listen to the Recap")
-audio_buffer.seek(0)
-st.audio(audio_buffer, format="audio/mp3")
+st.audio(audio_bytes, format="audio/mp3")
 
 # 📝 Recap script
 st.subheader("📝 Market Recap")
