@@ -113,7 +113,7 @@ with st.status("Preparing market recap...") as status:
     response_audio.stream_to_file("output.mp3")
     
     bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
-    status.update(label="Done", status="complete")
+    status.update(label="Done", state="complete")
 
 # Strealit code to display on the webpage
 st.title("📈 Daily U.S. Market Recap - Proof of Concept")
