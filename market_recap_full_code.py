@@ -102,9 +102,6 @@ with st.status("Preparing market recap...") as status:
         ]
     )
     script = response_script.choices[0].message.content
-    st.write("✅ Generated script length:", len(script))
-    
-    status.update(label="Creating audio file...")
     
     try:
         response_audio = client.audio.speech.create(
@@ -112,17 +109,31 @@ with st.status("Preparing market recap...") as status:
             voice="alloy",
             input=script
         )
+        st.success("TTS API call succeeded.")
     except Exception as e:
         st.error(f"TTS API call failed: {e}")
         st.stop()
-    
+
+    status.update(label="Creating audio file...")
     audio_buffer = io.BytesIO()
-    audio_buffer.write(response_audio.read())
+    audio_bytes = response_audio.read()
+    audio_buffer.write(audio_bytes)
     audio_buffer.seek(0)
+
+    st.write("✅ Audio buffer size:", len(audio_bytes))
+    st.write("✅ First few bytes:", audio_bytes[:10])
 
     if audio_buffer.getbuffer().nbytes == 0:
         st.error("❌ Audio buffer is empty!")
         st.stop()
+
+    st.download_button(
+    label="Download MP3 debug",
+    data=audio_bytes,
+    file_name="debug_output.mp3",
+    mime="audio/mpeg"
+    )
+
     
     bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
     status.update(label="Done", state="complete")
@@ -132,6 +143,7 @@ st.title("📈 Daily U.S. Market Recap - Proof of Concept")
 
 # 🎙️ Audio player
 st.subheader("🎧 Listen to the Recap")
+audio_buffer.seek(0)
 st.audio(audio_buffer, format="audio/mp3")
 
 # 📝 Recap script
