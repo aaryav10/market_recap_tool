@@ -137,7 +137,7 @@ with st.status("Preparing market recap...") as status:
     status.update(label="Done", state="complete")
 
 # Strealit code to display on the webpage
-st.title("📈 Daily U.S. Market Recap - Proof of Concept")
+st.title("📈 Daily U.S. Market Recap - Proof of Concept v2")
 
 # 🎙️ Audio player
 st.subheader("🎧 Listen to the Recap")
