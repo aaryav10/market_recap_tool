@@ -21,7 +21,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 newsapi = NewsApiClient(api_key = NEWS_API_KEY)
 
 if 'headlines' not in st.session_state:
-    with st.status("Fetching news articles"):
+    with st.status("Fetching news articles") as status :
         response = newsapi.get_everything(q='stocks OR earnings OR options OR inflation OR Fed OR S&P OR Nasdaq OR NOT crypto NOT bitcoin',
                                       language = 'en',
                                       sort_by='relevancy',
@@ -35,6 +35,7 @@ if 'headlines' not in st.session_state:
             continue
           headlines.append({'title':article['title'], 'content': article.get('content',''), 'url': article.get('url','')})
         st.session_state.headlines = headlines
+        status.done()
 else:
     headlines = st.session_state.headlines
 
@@ -56,9 +57,10 @@ def get_market_snapshot(ticker_map):
     return snapshot
 
 if 'snapshot' not in st.session_state:
-    with st.status("Gathering market data"):
+    with st.status("Gathering market data") as status:
         snapshot = get_market_snapshot(tickers)
         st.session_state.snapshot = snapshot
+        status.done()
 else:
     snapshot = st.session_state.snapshot
 
@@ -67,7 +69,7 @@ nasdaq = snapshot.get('Nasdaq', {'last_close': 'N/A', 'pct_change': 0})
 vix = snapshot.get('VIX', {'last_close': 'N/A', 'pct_change': 0})
 
 if 'script' not in st.session_state:
-    with st.status("Generating market recap"):
+    with st.status("Generating market recap") as status:
         
         instructions = ("You are a professional market analyst. Create a clear, weekly recap script (3-4 min) for U.S. equity markets based on the news articles we give. IT should read like a person writing a cohesive, combined summary of these articles:"
         "Note any macro trends, earnings, or market implications. Don't include insert date comment, and don't refer it to traders. Also make the number in numeric so that TTS can read it. Further check any spelling mistakes in the script")
@@ -88,17 +90,19 @@ if 'script' not in st.session_state:
         )
         script = response_script.choices[0].message.content
         st.session_state.script = script
+        status.done()
 else:
     script = st.session_state.script
 
 if 'audio_bytes' not in st.session_state:    
-    with st.status("Creating audio file"):
+    with st.status("Creating audio file") as status:
         response_audio = client.audio.speech.create(
             model="tts-1",
             voice="alloy",
             input=script
         )
         st.session_state.audio_bytes = response_audio.read()
+        status.done()
 
 audio_bytes = st.session_state.audio_bytes
     
