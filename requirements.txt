@@ -1,0 +1,6 @@
+streamlit
+openai
+newsapi-python
+yfinance
+python-dotenv
+gTTS
