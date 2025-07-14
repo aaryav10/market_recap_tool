@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/11zlVMleV9joxsnvJAbTKhl_R2ZUm3DkA
 """
 
-!pip install newsapi-python openai yfinance gTTs moviepy feedparser
+# !pip install newsapi-python openai yfinance gTTs moviepy feedparser
 
 from newsapi import NewsApiClient
 import os
