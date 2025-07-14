@@ -102,17 +102,27 @@ with st.status("Preparing market recap...") as status:
         ]
     )
     script = response_script.choices[0].message.content
-
+    st.write("✅ Generated script length:", len(script))
+    
     status.update(label="Creating audio file...")
-    response_audio = client.audio.speech.create(
-        model="tts-1",
-        voice="alloy",
-        input=script
-    )
+    
+    try:
+        response_audio = client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=script
+        )
+    except Exception as e:
+        st.error(f"TTS API call failed: {e}")
+        st.stop()
     
     audio_buffer = io.BytesIO()
     audio_buffer.write(response_audio.read())
     audio_buffer.seek(0)
+
+    if not response_audio:
+    st.error("❌ No audio response generated!")
+    st.stop()
     
     bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
     status.update(label="Done", state="complete")
