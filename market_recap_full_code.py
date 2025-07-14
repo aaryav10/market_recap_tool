@@ -115,21 +115,21 @@ bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
 st.title("📈 Daily U.S. Market Recap - Proof of Concept v3")
 
 # 🎙️ Audio player
-st.subheader("🎧 Listen to the Recap")
+st.subheader("🎧 Download and listen to the Recap")
 audio_bytes = response_audio.read()
-st.write(f"✅ audio_bytes length: {len(audio_bytes)}")
-st.write(f"✅ First 10 bytes: {audio_bytes[:10]}")
+# st.write(f"✅ audio_bytes length: {len(audio_bytes)}")
+# st.write(f"✅ First 10 bytes: {audio_bytes[:10]}")
+
 st.download_button(
-    "Debug: Download MP3",
+    "Download Recap Audio",
     data=audio_bytes,
     file_name="recap.mp3",
     mime="audio/mpeg"
 )
 
-audio_buffer = io.BytesIO(audio_bytes)
-audio_buffer.seek(0)
-st.audio(audio_buffer, format="audio/mp3")
-# st.audio(audio_bytes, format="audio/mp3")
+# audio_buffer = io.BytesIO(audio_bytes)
+# audio_buffer.seek(0)
+# st.audio(audio_buffer, format="audio/mp3")
 
 # 📝 Recap script
 st.subheader("📝 Market Recap")
