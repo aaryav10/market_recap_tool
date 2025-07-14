@@ -120,9 +120,9 @@ with st.status("Preparing market recap...") as status:
     audio_buffer.write(response_audio.read())
     audio_buffer.seek(0)
 
-    if not response_audio:
-    st.error("❌ No audio response generated!")
-    st.stop()
+    if audio_buffer.getbuffer().nbytes == 0:
+        st.error("❌ Audio buffer is empty!")
+        st.stop()
     
     bullet_points = "\n".join([f"• {h['title']}" for h in headlines[:15]])
     status.update(label="Done", state="complete")
@@ -132,7 +132,7 @@ st.title("📈 Daily U.S. Market Recap - Proof of Concept")
 
 # 🎙️ Audio player
 st.subheader("🎧 Listen to the Recap")
-st.audio(audio_buffer.read(), format="audio/mp3")
+st.audio(audio_buffer, format="audio/mp3")
 
 # 📝 Recap script
 st.subheader("📝 Market Recap")
