@@ -71,13 +71,22 @@ instructions = ("You are a professional market analyst. Create a clear, weekly r
 input = (f"S&P 500 closed at {snapshot['S&P500']['last_close']} with a {snapshot['S&P500']['pct_change']:.2f}% change, Nasdaq closed at {snapshot['Nasdaq']['last_close']} with a {snapshot['Nasdaq']['pct_change']:.2f}% change, VIX was at {snapshot['VIX']['last_close']} with a {snapshot['VIX']['pct_change']:.2f}% change."
 f"Top stories with content: {headlines[:10]}")
 
-response_script = client.responses.create(
-    model="gpt-4o-mini",
-    instructions=instructions,
-    input=input,
-)
+# response_script = client.responses.create(
+#     model="gpt-4o-mini",
+#     instructions=instructions,
+#     input=input,
+# )
 
-script = response_script.output_text
+response_script = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": instructions},
+        {"role": "user", "content": input}
+    ]
+)
+script = response_script.choices[0].message.content
+
+# script = response_script.output_text
 # print(script)
 
 response_audio = client.audio.speech.create(
