@@ -14,6 +14,11 @@ from openai import OpenAI
 import yfinance as yf
 import streamlit as st
 
+password = st.text_input("Enter demo password:", type="password")
+if password != st.secrets["demo_password"]:
+    st.stop()
+
+
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 NEWS_API_KEY = st.secrets["NEWS_API_KEY"]
 
